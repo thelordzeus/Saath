@@ -30,9 +30,9 @@ export const StateContextProvider = ({ children }) => {
           address, // owner
           form.title, // title
           form.description, // description
-          ethers.utils.parseUnits(form.target.toString(), "ether"), // target, converting to BigNumber
-          Math.floor(new Date(form.deadline).getTime() / 1000), // deadline, converting to UNIX timestamp in seconds
-          form.image, // image URL
+          form.target,
+          new Date(form.deadline).getTime(), // deadline,
+          form.image,
         ],
       });
 
@@ -42,9 +42,38 @@ export const StateContextProvider = ({ children }) => {
     }
   };
 
+  const getCampaigns = async () => {
+    try {
+      const campaigns = await contract.call("getCampasigns");
+
+      const parsedCampaigns = campaigns.map((campaign, i) => ({
+        owner: campaign.owner,
+        title: campaign.title,
+        description: campaign.description,
+        target: ethers.utils.formatEther(campaign.target.toString()),
+        deadline: campaign.deadline.toNumber(),
+        amountCollected: ethers.utils.formatEther(
+          campaign.amountCollected.toString()
+        ),
+        image: campaign.image,
+        pId: i,
+      }));
+
+      return parsedCampaigns;
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      // Handle the error appropriately, possibly by setting an error state or displaying a message to the user.
+    }
+  };
   return (
     <StateContext.Provider
-      value={{ address, contract, createCampaign: publishCampaign, connect }}
+      value={{
+        address,
+        contract,
+        createCampaign: publishCampaign,
+        connect,
+        getCampaigns,
+      }}
     >
       {children}
     </StateContext.Provider>
